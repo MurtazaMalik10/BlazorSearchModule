@@ -25,9 +25,13 @@ To run this project, you need to have the following installed:
    git clone https://github.com/MurtazaMalik10/BlazorSearchModule.git
    
 2. **Navigate to the Project Directory**
+
+    ```bash
    cd BlazorSearchModule
 
 3. **Restore Dependencies**
+
+    ```bash
    dotnet restore
 
    
