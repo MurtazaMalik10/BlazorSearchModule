@@ -1,0 +1,33 @@
+﻿@inherits LayoutComponentBase
+
+<PageTitle>SearchModule</PageTitle>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">Tourify</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="/tours" Match="NavLinkMatch.All">Tours</NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="addtour">Add Tour</NavLink>
+                </li>
+                <li class="nav-item">
+                    <NavLink class="nav-link" href="mytours">My Tours</NavLink>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="page">
+    <main>
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>

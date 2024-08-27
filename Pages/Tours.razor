@@ -1,0 +1,51 @@
+﻿@page "/tours"
+@using SearchModule.Models
+@inject TourService TourService
+@inject NavigationManager NavigationManager
+
+@code {
+    private IEnumerable<TourPackage> tourPackages;
+    private string location;
+    private DateTime? departureDate;
+    private DateTime? arrivalDate;
+    private int priceRange;
+
+    protected override void OnInitialized()
+    {
+        // Get search parameters from query string
+        var query = NavigationManager.ToAbsoluteUri(NavigationManager.Uri).Query;
+        var queryParams = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(query);
+
+        location = queryParams.TryGetValue("location", out var loc) ? loc.First() : string.Empty;
+        departureDate = queryParams.TryGetValue("departureDate", out var depDate) ? DateTime.Parse(depDate.First()) : (DateTime?)null;
+        arrivalDate = queryParams.TryGetValue("arrivalDate", out var arrDate) ? DateTime.Parse(arrDate.First()) : (DateTime?)null;
+        priceRange = queryParams.TryGetValue("priceRange", out var price) ? int.Parse(price.First()) : 0;
+
+        tourPackages = TourService.GetFilteredTours(location, departureDate, arrivalDate, priceRange);
+    }
+}
+
+<div class="tours-container">
+    <h2>Available Tours</h2>
+    <div class="row">
+        @foreach (var tour in tourPackages)
+        {
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <img src="@tour.ImageUrl" alt="@tour.Title" class="card-img-top" />
+                    <div class="card-body">
+                        <h5 class="card-title">@tour.Title</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">@tour.Duration</h6>
+                        <p class="card-text">
+                            <strong>Price:</strong> @tour.Pricing<br />
+                            <strong>From:</strong> @tour.FromCity<br />
+                            <strong>To:</strong> @tour.ToCity<br />
+                            <strong>Services:</strong> @tour.PackageServicesDescription<br />
+                            <strong>Viewpoints:</strong> @tour.PackageViewPointsDescription
+                        </p>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

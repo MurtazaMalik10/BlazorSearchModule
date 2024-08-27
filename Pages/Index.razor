@@ -1,0 +1,56 @@
+﻿@page "/"
+@inject NavigationManager NavigationManager
+
+<div class="homepage">
+    <div class="hero">
+        <img src="/cityscape.jpg" alt="Cityscape" class="background-image" />
+        <div class="search-bar container">
+            <div class="row align-items-end">
+                <div class="col-md-4 mb-3">
+                    <label for="location">Location</label>
+                    <input id="location" @bind="Location" type="text" placeholder="Where you want to go?" class="form-control" />
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="departure-date">From</label>
+                    <input id="departure-date" type="date" @bind-value="DepartureDate" class="form-control" />
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="arrival-date">To</label>
+                    <input id="arrival-date" type="date" @bind-value="ArrivalDate" class="form-control" />
+                </div>
+                <div class="col-md-2 mb-3">
+                    <label for="price-range">Price Range: <span>@PriceRangeDisplay</span></label>
+                    <input id="price-range" type="range" @bind="PriceRange" min="0" max="50000" step="1000" class="form-range" />
+                </div>
+                <div class="col-md-2 mb-3 d-flex align-items-end justify-content-end">
+                    <button class="btn btn-primary search-button" @onclick="SearchTours">
+                        <i class="oi oi-magnifying-glass"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    public string Location { get; set; } = string.Empty;
+    public DateTime? DepartureDate { get; set; }
+    public DateTime? ArrivalDate { get; set; }
+    public int PriceRange { get; set; } = 0;
+
+    public string PriceRangeDisplay => $"₨{PriceRange:N0}";
+
+    private void SearchTours()
+    {
+        var queryParams = new Dictionary<string, string>
+        {
+            { "location", Location },
+            { "departureDate", DepartureDate?.ToString("yyyy-MM-dd") ?? string.Empty },
+            { "arrivalDate", ArrivalDate?.ToString("yyyy-MM-dd") ?? string.Empty },
+            { "priceRange", PriceRange.ToString() }
+        };
+
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString("/tours", queryParams);
+        NavigationManager.NavigateTo(query, true);
+    }
+}
