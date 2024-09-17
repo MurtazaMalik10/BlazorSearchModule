@@ -10,6 +10,17 @@
     private DateTime? arrivalDate;
     private int priceRange;
 
+    // Filter-specific fields
+    private string selectedLocation;
+    private List<string> selectedServices = new();
+    private List<string> selectedViewpoints = new();
+    private int selectedMaxPrice = 50000;
+
+    // Available filter options
+    private readonly List<string> availableServices = new() { "Accommodation", "Transportation", "Meals" };
+    private readonly List<string> availableViewpoints = new() { "Mountain", "Beach", "Cityscape" };
+    private readonly List<string> availableLocations = new() { "Karachi", "Lahore", "Islamabad", "Murree" };
+
     protected override void OnInitialized()
     {
         // Get search parameters from query string
@@ -21,31 +32,176 @@
         arrivalDate = queryParams.TryGetValue("arrivalDate", out var arrDate) ? DateTime.Parse(arrDate.First()) : (DateTime?)null;
         priceRange = queryParams.TryGetValue("priceRange", out var price) ? int.Parse(price.First()) : 0;
 
-        tourPackages = TourService.GetFilteredTours(location, departureDate, arrivalDate, priceRange);
+        // Initially fetch all tours with applied search parameters
+        LoadTours();
+    }
+
+    private void LoadTours()
+    {
+        // Load all tours without filtering (pass default/empty values for no filters)
+        var allTours = TourService.GetFilteredTours(string.Empty, null, null, 0);
+
+        // Debug: Print the total number of tours initially retrieved
+        Console.WriteLine($"Total Tours Retrieved: {allTours.Count()}");
+
+        // Apply location filter
+        if (!string.IsNullOrEmpty(selectedLocation))
+        {
+            allTours = allTours.Where(t => t.FromCity.Trim().Contains(selectedLocation.Trim(), StringComparison.OrdinalIgnoreCase));
+            Console.WriteLine($"Tours after location filter: {allTours.Count()}");
+        }
+
+        // Apply services filter
+        if (selectedServices.Count > 0)
+        {
+            allTours = allTours.Where(t => selectedServices.All(s => t.PackageServicesDescription.Contains(s, StringComparison.OrdinalIgnoreCase)));
+            Console.WriteLine($"Tours after services filter: {allTours.Count()}");
+        }
+
+        // Apply viewpoints filter
+        if (selectedViewpoints.Count > 0)
+        {
+            allTours = allTours.Where(t => selectedViewpoints.All(v => t.PackageViewPointsDescription.Contains(v, StringComparison.OrdinalIgnoreCase)));
+            Console.WriteLine($"Tours after viewpoints filter: {allTours.Count()}");
+        }
+
+        // Apply price filter (convert Pricing to integer)
+        allTours = allTours.Where(t => int.TryParse(t.Pricing, out var pricing) && pricing <= selectedMaxPrice);
+        Console.WriteLine($"Tours after price filter: {allTours.Count()}");
+
+        // Assign the filtered results to the tourPackages
+        tourPackages = allTours.ToList();
+    }
+
+
+    private void ApplyFilters()
+    {
+        LoadTours();
+    }
+
+    private void OnServiceSelectionChanged(ChangeEventArgs e, string service)
+    {
+        if ((bool)e.Value) // Checkbox checked
+        {
+            if (!selectedServices.Contains(service))
+            {
+                selectedServices.Add(service); // Add service if not already in the list
+            }
+        }
+        else // Checkbox unchecked
+        {
+            if (selectedServices.Contains(service))
+            {
+                selectedServices.Remove(service); // Remove service from the list
+            }
+        }
+    }
+
+    private void OnViewpointSelectionChanged(ChangeEventArgs e, string viewpoint)
+    {
+        if ((bool)e.Value) // Checkbox checked
+        {
+            if (!selectedViewpoints.Contains(viewpoint))
+            {
+                selectedViewpoints.Add(viewpoint); // Add viewpoint if not already in the list
+            }
+        }
+        else // Checkbox unchecked
+        {
+            if (selectedViewpoints.Contains(viewpoint))
+            {
+                selectedViewpoints.Remove(viewpoint); // Remove viewpoint from the list
+            }
+        }
+    }
+
+    private void OnLocationSelectionChanged(ChangeEventArgs e)
+    {
+        selectedLocation = e.Value.ToString(); // Update selected location
+    }
+
+    private void OnPriceRangeChanged(ChangeEventArgs e)
+    {
+        selectedMaxPrice = int.Parse(e.Value.ToString()); // Update selected max price
     }
 }
+ 
 
-<div class="tours-container">
-    <h2>Available Tours</h2>
-    <div class="row">
-        @foreach (var tour in tourPackages)
-        {
-            <div class="col-md-4 mb-4">
-                <div class="card">
-                    <img src="@tour.ImageUrl" alt="@tour.Title" class="card-img-top" />
-                    <div class="card-body">
-                        <h5 class="card-title">@tour.Title</h5>
-                        <h6 class="card-subtitle mb-2 text-muted">@tour.Duration</h6>
-                        <p class="card-text">
-                            <strong>Price:</strong> @tour.Pricing<br />
-                            <strong>From:</strong> @tour.FromCity<br />
-                            <strong>To:</strong> @tour.ToCity<br />
-                            <strong>Services:</strong> @tour.PackageServicesDescription<br />
-                            <strong>Viewpoints:</strong> @tour.PackageViewPointsDescription
-                        </p>
+<div class="row">
+    <!-- Filter Section -->
+    <div class="col-md-3">
+        <h5>Filter Tours</h5>
+
+        <!-- Location Filter -->
+        <div class="mb-3">
+            <label for="locationFilter">Location</label>
+            <select id="locationFilter" @bind="selectedLocation" class="form-select">
+                <option value="">All</option>
+                @foreach (var loc in availableLocations)
+                {
+                    <option value="@loc">@loc</option>
+                }
+            </select>
+        </div>
+
+        <!-- Services Filter -->
+        <div class="mb-3">
+            <label>Services</label>
+            @foreach (var service in availableServices)
+            {
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="@service" @onchange="(e) => OnServiceSelectionChanged(e, service)" />
+                    <label class="form-check-label">@service</label>
+                </div>
+            }
+
+        </div>
+
+        <!-- Viewpoints Filter -->
+        <div class="mb-3">
+            <label>Viewpoints</label>
+            @foreach (var viewpoint in availableViewpoints)
+            {
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="@viewpoint" @onchange="(e) => OnViewpointSelectionChanged(e, viewpoint)" />
+                    <label class="form-check-label">@viewpoint</label>
+                </div>
+            }
+        </div>
+
+        <!-- Price Range Filter -->
+        <div class="mb-3">
+            <label for="priceRangeFilter">Price Range: <span>₨@selectedMaxPrice:N0</span></label>
+            <input id="priceRangeFilter" type="range" @bind="selectedMaxPrice" min="0" max="50000" step="1000" class="form-range" />
+        </div>
+
+        <!-- Apply Filters Button -->
+        <button class="btn btn-primary" @onclick="ApplyFilters">Apply Filters</button>
+    </div>
+
+    <!-- Tours Section -->
+    <div class="col-md-9">
+        <h2>Available Tours</h2>
+        <div class="row">
+            @foreach (var tour in tourPackages)
+            {
+                <div class="col-md-4 mb-4">
+                    <div class="card">
+                        <img src="@tour.ImageUrl" alt="@tour.Title" class="card-img-top" />
+                        <div class="card-body">
+                            <h5 class="card-title">@tour.Title</h5>
+                            <h6 class="card-subtitle mb-2 text-muted">@tour.Duration</h6>
+                            <p class="card-text">
+                                <strong>Price:</strong> @tour.Pricing<br />
+                                <strong>From:</strong> @tour.FromCity<br />
+                                <strong>To:</strong> @tour.ToCity<br />
+                                <strong>Services:</strong> @tour.PackageServicesDescription<br />
+                                <strong>Viewpoints:</strong> @tour.PackageViewPointsDescription
+                            </p>
+                        </div>
                     </div>
                 </div>
-            </div>
-        }
+            }
+        </div>
     </div>
 </div>

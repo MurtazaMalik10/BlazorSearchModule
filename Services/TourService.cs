@@ -144,12 +144,31 @@ public class TourService
 
     public IEnumerable<TourPackage> GetFilteredTours(string location, DateTime? departureDate, DateTime? arrivalDate, int priceRange)
     {
-        return tourPackages.Where(t =>
-            (string.IsNullOrEmpty(location) || t.ToCity.Contains(location, StringComparison.OrdinalIgnoreCase)) &&
-            (priceRange == 0 || TryParsePrice(t.Pricing) <= priceRange) &&
-            (!departureDate.HasValue || !arrivalDate.HasValue || (departureDate <= arrivalDate)) // You can add more complex date logic here
-        ).ToList();
+        // Start with all tours
+        var filteredTours = tourPackages.AsEnumerable();
+
+        // Apply location filter if provided
+        if (!string.IsNullOrEmpty(location))
+        {
+            filteredTours = filteredTours.Where(t => t.ToCity.Contains(location, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // Apply price range filter if provided
+        if (priceRange > 0)
+        {
+            filteredTours = filteredTours.Where(t => TryParsePrice(t.Pricing) <= priceRange);
+        }
+
+        // Apply date filter (for demonstration; you can expand this logic)
+        if (departureDate.HasValue && arrivalDate.HasValue)
+        {
+            // Assuming a basic check that departure date is before arrival date
+            filteredTours = filteredTours.Where(t => departureDate <= arrivalDate);
+        }
+
+        return filteredTours.ToList();
     }
+
 
     private int TryParsePrice(string price)
     {
